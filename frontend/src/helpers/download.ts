@@ -97,7 +97,8 @@ export const formatSecretEnvFile = (
     .sort((a, b) => a.key.toLowerCase().localeCompare(b.key.toLowerCase()))
     .reduce((prev, { key, comment, value }) => {
       const escapedValue = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      const formattedValue = `"${escapedValue}"`;
+      // dotenv reads single-quoted values verbatim but never unescapes \" or \\ in double quotes.
+      const formattedValue = value.includes("'") ? `"${escapedValue}"` : `'${value}'`;
 
       if (!comment) return `${prev}${key}=${formattedValue}\n`;
 
