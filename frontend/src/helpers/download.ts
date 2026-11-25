@@ -84,6 +84,15 @@ export const getSecretEnvFileEntryCount = (
   importedSecrets: SecretEnvFileImport[]
 ) => getSecretEnvFileEntries(localSecrets, importedSecrets).length;
 
+// Node dotenv never unescapes \" or \\, and python-dotenv decodes \\ and \' inside single quotes, so a
+// value is written in the first form both read back verbatim: single-quoted, then unquoted. A backslash
+// before the closing quote would escape it and swallow the next line.
+const formatEnvValue = (value: string) => {
+  if (!value.includes("'") && !value.includes("\\\\") && !value.endsWith("\\")) return `'${value}'`;
+  if (/^[^\s'"`#](?:[^#\r\n]*[^\s#])?$/.test(value)) return value;
+  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+};
+
 /**
  * Merges local secrets with imported secrets (local > later imports > earlier imports),
  * and formats them as a .env file string.
@@ -96,9 +105,7 @@ export const formatSecretEnvFile = (
   getSecretEnvFileEntries(localSecrets, importedSecrets)
     .sort((a, b) => a.key.toLowerCase().localeCompare(b.key.toLowerCase()))
     .reduce((prev, { key, comment, value }) => {
-      const escapedValue = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      // dotenv reads single-quoted values verbatim but never unescapes \" or \\ in double quotes.
-      const formattedValue = value.includes("'") ? `"${escapedValue}"` : `'${value}'`;
+      const formattedValue = formatEnvValue(value);
 
       if (!comment) return `${prev}${key}=${formattedValue}\n`;
 
