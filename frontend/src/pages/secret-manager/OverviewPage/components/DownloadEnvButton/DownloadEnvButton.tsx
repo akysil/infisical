@@ -61,7 +61,7 @@ export const DownloadEnvButton = ({ environments, projectId, secretPath }: Props
     tooltipContent = "No secrets in this folder";
   }
 
-  const handleSecretExport = async (action: ExportAction) => {
+  const handleSecretExport = async (action: ExportAction, format?: "cli") => {
     if (!environment) return;
     const flow = {
       action: "export" as const,
@@ -81,7 +81,7 @@ export const DownloadEnvButton = ({ environments, projectId, secretPath }: Props
         secretPath
       });
 
-      const file = formatSecretEnvFile(localSecrets, localImportedSecrets);
+      const file = formatSecretEnvFile(localSecrets, localImportedSecrets, format);
       if (!file) {
         attempt.flow({ ...flow, phase: "empty", countBucket: "0" });
         createNotification({
@@ -173,6 +173,14 @@ export const DownloadEnvButton = ({ environments, projectId, secretPath }: Props
         <DropdownMenuItem onClick={() => handleSecretExport("download")}>
           <DownloadIcon />
           Download as .env
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleSecretExport("clipboard", "cli")}>
+          <CopyIcon />
+          Copy in CLI Format
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleSecretExport("download", "cli")}>
+          <DownloadIcon />
+          Download in CLI Format
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

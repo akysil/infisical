@@ -91,18 +91,16 @@ export const getSecretEnvFileEntryCount = (
  */
 export const formatSecretEnvFile = (
   localSecrets: SecretEnvFileSecret[],
-  importedSecrets: SecretEnvFileImport[]
+  importedSecrets: SecretEnvFileImport[],
+  format: "default" | "cli" = "default"
 ) =>
   getSecretEnvFileEntries(localSecrets, importedSecrets)
     .sort((a, b) => a.key.toLowerCase().localeCompare(b.key.toLowerCase()))
     .reduce((prev, { key, comment, value }) => {
       const escapedValue = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      // Node dotenv never unescapes \" or \\ in double quotes. Single quotes are read verbatim by Node
-      // dotenv, python-dotenv and sh, except that python-dotenv decodes \\ and a trailing \ escapes the
-      // closing quote.
-      const isSingleQuotable =
-        !value.includes("'") && !value.includes("\\\\") && !value.endsWith("\\");
-      const formattedValue = isSingleQuotable ? `'${value}'` : `"${escapedValue}"`;
+      // Matches the CLI's dotenv export: Node dotenv reads single-quoted values verbatim but never
+      // unescapes \" or \\ inside double quotes.
+      const formattedValue = format === "cli" ? `'${value}'` : `"${escapedValue}"`;
 
       if (!comment) return `${prev}${key}=${formattedValue}\n`;
 
