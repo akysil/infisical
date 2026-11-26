@@ -91,13 +91,16 @@ export const getSecretEnvFileEntryCount = (
  */
 export const formatSecretEnvFile = (
   localSecrets: SecretEnvFileSecret[],
-  importedSecrets: SecretEnvFileImport[]
+  importedSecrets: SecretEnvFileImport[],
+  format: "default" | "cli" = "default"
 ) =>
   getSecretEnvFileEntries(localSecrets, importedSecrets)
     .sort((a, b) => a.key.toLowerCase().localeCompare(b.key.toLowerCase()))
     .reduce((prev, { key, comment, value }) => {
       const escapedValue = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-      const formattedValue = `"${escapedValue}"`;
+      // Uses the CLI dotenv export's single quotes but keeps line breaks as they are: Node dotenv
+      // reads single-quoted values verbatim but never unescapes \" or \\ inside double quotes.
+      const formattedValue = format === "cli" ? `'${value}'` : `"${escapedValue}"`;
 
       if (!comment) return `${prev}${key}=${formattedValue}\n`;
 
